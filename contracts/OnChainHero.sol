@@ -13,23 +13,224 @@ contract OnChainHero is ERC721URIStorage {
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
 
+  event NewEpicNFTMinted(address sender, uint256 tokenId);
+
+  constructor() ERC721("OnChainHero", "HERO") {
+    console.log("This is my NFT contract. Woah!");
+  }
+
+  function _uint2str(uint256 _i) internal pure returns (string memory str) {
+    if (_i == 0) {
+      return "0";
+    }
+    uint256 j = _i;
+    uint256 length;
+    while (j != 0) {
+      length++;
+      j /= 10;
+    }
+    bytes memory bstr = new bytes(length);
+    uint256 k = length;
+    j = _i;
+    while (j != 0) {
+      bstr[--k] = bytes1(uint8(48 + (j % 10)));
+      j /= 10;
+    }
+    str = string(bstr);
+  }
+
+  function pickRandomBgColor(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("BG_COLOR", Strings.toString(tokenId)))
+    );
+    rand = rand % bgColors.length;
+    return bgColors[rand];
+  }
+
+  function pickRandomCardColor(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("CARD_COLOR", Strings.toString(tokenId)))
+    );
+    rand = rand % cardColors.length;
+    return cardColors[rand];
+  }
+
+  function pickRandomNoun(uint256 tokenId) public view returns (string memory) {
+    uint256 rand = random(
+      string(abi.encodePacked("NOUN", Strings.toString(tokenId)))
+    );
+    rand = rand % nouns.length;
+    return nouns[rand];
+  }
+
+  // Same old stuff, pick a random color.
+  function pickRandomPrefix(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("PREFIX", Strings.toString(tokenId)))
+    );
+    rand = rand % prefixes.length;
+    return prefixes[rand];
+  }
+
+  // Same old stuff, pick a random color.
+  function pickRandomPower(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("POWER", Strings.toString(tokenId)))
+    );
+    rand = rand % powers.length;
+    return powers[rand];
+  }
+
+  // Same old stuff, pick a random color.
+  function pickRandomFirstName(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("FIRST_NAME", Strings.toString(tokenId)))
+    );
+    rand = rand % firstNames.length;
+    return firstNames[rand];
+  }
+
+  // Same old stuff, pick a random color.
+  function pickRandomLastName(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("LAST_NAME", Strings.toString(tokenId)))
+    );
+    rand = rand % lastNames.length;
+    return lastNames[rand];
+  }
+
+  function random(string memory input) internal pure returns (uint256) {
+    return uint256(keccak256(abi.encodePacked(input)));
+  }
+
+  function makeAnEpicNFT() public {
+    uint256 newItemId = _tokenIds.current();
+
+    string memory cardColor = pickRandomCardColor(newItemId);
+    string memory heroName = string(
+      abi.encodePacked(
+        pickRandomPrefix(newItemId),
+        " ",
+        pickRandomNoun(newItemId)
+      )
+    );
+
+    string memory finalSvgOne = string(
+      abi.encodePacked(svgPartOne, pickRandomBgColor(newItemId), svgPartTwo)
+    );
+    string memory finalSvgTwo = string(
+      abi.encodePacked(cardColor, svgPartThree, _uint2str(newItemId))
+    );
+    string memory finalSvgThree = string(
+      abi.encodePacked(svgPartFour, heroName, svgPartFive)
+    );
+    string memory finalSvgFour = string(
+      abi.encodePacked(
+        pickRandomPower(newItemId),
+        svgPartSix,
+        string(
+          abi.encodePacked(
+            pickRandomFirstName(newItemId),
+            " ",
+            pickRandomLastName(newItemId)
+          )
+        )
+      )
+    );
+    string memory finalSvgFive = string(
+      abi.encodePacked(svgPartSeven, cardColor, svgPartEight)
+    );
+
+    string memory finalSvg = string(
+      abi.encodePacked(
+        finalSvgOne,
+        finalSvgTwo,
+        finalSvgThree,
+        finalSvgFour,
+        finalSvgFive
+      )
+    );
+
+    console.log(finalSvg);
+    string memory jsonOne = string(
+      abi.encodePacked(
+        '{"name": "OnChainHero #',
+        _uint2str(newItemId),
+        '", "description": "Hero License for '
+      )
+    );
+    string memory jsonTwo = string(
+      abi.encodePacked(
+        heroName,
+        ' issued by the OnChainHero Corps.", "image": "data:image/svg+xml;base64,',
+        Base64.encode(bytes(finalSvg)),
+        '"}'
+      )
+    );
+    // Get all the JSON metadata in place and base64 encode it.
+    string memory json = Base64.encode(
+      bytes(string(abi.encodePacked(jsonOne, jsonTwo)))
+    );
+
+    // Just like before, we prepend data:application/json;base64, to our data.
+    string memory finalTokenUri = string(
+      abi.encodePacked("data:application/json;base64,", json)
+    );
+
+    console.log(finalTokenUri);
+
+    _safeMint(msg.sender, newItemId);
+
+    // Update your URI!!!
+    _setTokenURI(newItemId, finalTokenUri);
+
+    _tokenIds.increment();
+    console.log("An NFT w/ ID %s has been minted to %s", newItemId, msg.sender);
+
+    emit NewEpicNFTMinted(msg.sender, newItemId);
+  }
+
   // This is our SVG code. All we need to change is the word that's displayed. Everything else stays the same.
   // So, we make a baseSvg variable here that all our NFTs can use.
   // We split the SVG at the part where it asks for the background color.
-  string svgPartOne =
+  string constant svgPartOne =
     "<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMin meet' viewBox='0 0 350 350'><style>.base,.label,.number{fill:#777;font-family:Monaco,sans-serif;font-size:8px}.base,.label{font-size:10px}.base{fill:#222;font-size:12px;font-weight:600}</style><rect width='100%' height='100%' fill='";
-  string svgPartTwo = "'/><rect width='90%' height='60%' fill='";
-  string svgPartThree =
+  string constant svgPartTwo = "'/><rect width='90%' height='60%' fill='";
+  string constant svgPartThree =
     "' x='5%' y='20%' rx='20' style='-webkit-filter:drop-shadow(0 0 10px rgba(0,0,0,.5))' filter='drop-shadow(0 0 10px rgba(0,0,0,.5))'/><rect width='88%' height='58%' fill='#fff' x='6%' y='21%' rx='18'/><text x='10%' y='30%' class='base' dominant-baseline='middle'>Super Hero License</text><text x='10%' y='34%' class='number' dominant-baseline='middle'>License #";
-  string svgPartFour =
+  string constant svgPartFour =
     "</text><text x='10%' y='40%' class='label' dominant-baseline='middle'>Hero Name</text><text x='10%' y='45%' class='base' dominant-baseline='middle'>";
-  string svgPartFive =
+  string constant svgPartFive =
     "</text><text x='10%' y='52%' class='label' dominant-baseline='middle'>Super Power</text><text x='10%' y='57%' class='base' dominant-baseline='middle'>";
-  string svgPartSix =
+  string constant svgPartSix =
     "</text><text x='10%' y='64%' class='label' dominant-baseline='middle'>Civilian Name</text><text x='10%' y='69%' class='base' dominant-baseline='middle'>";
-  string svgPartSeven =
+  string constant svgPartSeven =
     "</text><path fill='#eee' d='M240 100l-40 80 100-20-40 70z'/><path fill='";
-  string svgPartEight =
+  string constant svgPartEight =
     "' d='M250 100l-40 80 100-20-40 70z'/><text x='70%' y='67%' class='number' dominant-baseline='middle' text-anchor='middle'>Issued By</text><text x='70%' y='70%' class='number' dominant-baseline='middle' text-anchor='middle'>OnChainHero Corps</text></svg>";
 
   // Get fancy with it! Declare a bunch of colors.
@@ -741,205 +942,4 @@ contract OnChainHero is ERC721URIStorage {
     "Santiago",
     "Lambert"
   ];
-
-  event NewEpicNFTMinted(address sender, uint256 tokenId);
-
-  constructor() ERC721("OnChainHero", "HERO") {
-    console.log("This is my NFT contract. Woah!");
-  }
-
-  function _uint2str(uint256 _i) internal pure returns (string memory str) {
-    if (_i == 0) {
-      return "0";
-    }
-    uint256 j = _i;
-    uint256 length;
-    while (j != 0) {
-      length++;
-      j /= 10;
-    }
-    bytes memory bstr = new bytes(length);
-    uint256 k = length;
-    j = _i;
-    while (j != 0) {
-      bstr[--k] = bytes1(uint8(48 + (j % 10)));
-      j /= 10;
-    }
-    str = string(bstr);
-  }
-
-  function pickRandomBgColor(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("BG_COLOR", Strings.toString(tokenId)))
-    );
-    rand = rand % bgColors.length;
-    return bgColors[rand];
-  }
-
-  function pickRandomCardColor(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("CARD_COLOR", Strings.toString(tokenId)))
-    );
-    rand = rand % cardColors.length;
-    return cardColors[rand];
-  }
-
-  function pickRandomNoun(uint256 tokenId) public view returns (string memory) {
-    uint256 rand = random(
-      string(abi.encodePacked("NOUN", Strings.toString(tokenId)))
-    );
-    rand = rand % nouns.length;
-    return nouns[rand];
-  }
-
-  // Same old stuff, pick a random color.
-  function pickRandomPrefix(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("PREFIX", Strings.toString(tokenId)))
-    );
-    rand = rand % prefixes.length;
-    return prefixes[rand];
-  }
-
-  // Same old stuff, pick a random color.
-  function pickRandomPower(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("POWER", Strings.toString(tokenId)))
-    );
-    rand = rand % powers.length;
-    return powers[rand];
-  }
-
-  // Same old stuff, pick a random color.
-  function pickRandomFirstName(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("FIRST_NAME", Strings.toString(tokenId)))
-    );
-    rand = rand % firstNames.length;
-    return firstNames[rand];
-  }
-
-  // Same old stuff, pick a random color.
-  function pickRandomLastName(uint256 tokenId)
-    public
-    view
-    returns (string memory)
-  {
-    uint256 rand = random(
-      string(abi.encodePacked("LAST_NAME", Strings.toString(tokenId)))
-    );
-    rand = rand % lastNames.length;
-    return lastNames[rand];
-  }
-
-  function random(string memory input) internal pure returns (uint256) {
-    return uint256(keccak256(abi.encodePacked(input)));
-  }
-
-  function makeAnEpicNFT() public {
-    uint256 newItemId = _tokenIds.current();
-
-    string memory cardColor = pickRandomCardColor(newItemId);
-    string memory heroName = string(
-      abi.encodePacked(
-        pickRandomPrefix(newItemId),
-        " ",
-        pickRandomNoun(newItemId)
-      )
-    );
-
-    string memory finalSvgOne = string(
-      abi.encodePacked(svgPartOne, pickRandomBgColor(newItemId), svgPartTwo)
-    );
-    string memory finalSvgTwo = string(
-      abi.encodePacked(cardColor, svgPartThree, _uint2str(newItemId))
-    );
-    string memory finalSvgThree = string(
-      abi.encodePacked(svgPartFour, heroName, svgPartFive)
-    );
-    string memory finalSvgFour = string(
-      abi.encodePacked(
-        pickRandomPower(newItemId),
-        svgPartSix,
-        string(
-          abi.encodePacked(
-            pickRandomFirstName(newItemId),
-            " ",
-            pickRandomLastName(newItemId)
-          )
-        )
-      )
-    );
-    string memory finalSvgFive = string(
-      abi.encodePacked(svgPartSeven, cardColor, svgPartEight)
-    );
-
-    string memory finalSvg = string(
-      abi.encodePacked(
-        finalSvgOne,
-        finalSvgTwo,
-        finalSvgThree,
-        finalSvgFour,
-        finalSvgFive
-      )
-    );
-
-    console.log(finalSvg);
-    string memory jsonOne = string(
-      abi.encodePacked(
-        '{"name": "OnChainHero #',
-        _uint2str(newItemId),
-        '", "description": "Hero License for '
-      )
-    );
-    string memory jsonTwo = string(
-      abi.encodePacked(
-        heroName,
-        ' issued by the OnChainHero Corps.", "image": "data:image/svg+xml;base64,',
-        Base64.encode(bytes(finalSvg)),
-        '"}'
-      )
-    );
-    // Get all the JSON metadata in place and base64 encode it.
-    string memory json = Base64.encode(
-      bytes(string(abi.encodePacked(jsonOne, jsonTwo)))
-    );
-
-    // Just like before, we prepend data:application/json;base64, to our data.
-    string memory finalTokenUri = string(
-      abi.encodePacked("data:application/json;base64,", json)
-    );
-
-    console.log(finalTokenUri);
-
-    _safeMint(msg.sender, newItemId);
-
-    // Update your URI!!!
-    _setTokenURI(newItemId, finalTokenUri);
-
-    _tokenIds.increment();
-    console.log("An NFT w/ ID %s has been minted to %s", newItemId, msg.sender);
-
-    emit NewEpicNFTMinted(msg.sender, newItemId);
-  }
 }
