@@ -107,6 +107,18 @@ contract OnChainHero is ERC721URIStorage {
     return locations[rand];
   }
 
+  function pickRandomGrade(uint256 tokenId)
+    public
+    view
+    returns (string memory)
+  {
+    uint256 rand = random(
+      string(abi.encodePacked("GRADE", Strings.toString(tokenId)))
+    );
+    rand = rand % grades.length;
+    return grades[rand];
+  }
+
   function random(string memory input) internal pure returns (uint256) {
     return uint256(keccak256(abi.encodePacked(input)));
   }
@@ -128,20 +140,23 @@ contract OnChainHero is ERC721URIStorage {
       abi.encodePacked(svgPartOne, pickRandomBgColor(newItemId), svgPartTwo)
     );
     string memory finalSvgTwo = string(
-      abi.encodePacked(cardColor, svgPartThree, _uint2str(newItemId))
+      abi.encodePacked(cardColor, svgPartThree, pickRandomGrade(newItemId))
     );
     string memory finalSvgThree = string(
-      abi.encodePacked(svgPartFour, heroName, svgPartFive)
+      abi.encodePacked(svgPartFour, _uint2str(newItemId))
     );
     string memory finalSvgFour = string(
+      abi.encodePacked(svgPartFive, heroName, svgPartSix)
+    );
+    string memory finalSvgFive = string(
       abi.encodePacked(
         pickRandomPower(newItemId),
-        svgPartSix,
+        svgPartSeven,
         pickRandomLocation(newItemId)
       )
     );
-    string memory finalSvgFive = string(
-      abi.encodePacked(svgPartSeven, cardColor, svgPartEight)
+    string memory finalSvgSix = string(
+      abi.encodePacked(svgPartEight, cardColor, svgPartNine)
     );
 
     string memory finalSvg = string(
@@ -150,7 +165,8 @@ contract OnChainHero is ERC721URIStorage {
         finalSvgTwo,
         finalSvgThree,
         finalSvgFour,
-        finalSvgFive
+        finalSvgFive,
+        finalSvgSix
       )
     );
 
@@ -193,6 +209,8 @@ contract OnChainHero is ERC721URIStorage {
     emit NewEpicNFTMinted(msg.sender, newItemId);
   }
 
+  // TODO: make this svg to be named properly instead of ordered. Ordered
+  // naming makes it hard for us to add things in the middle.
   // This is our SVG code. All we need to change is the word that's displayed. Everything else stays the same.
   // So, we make a baseSvg variable here that all our NFTs can use.
   // We split the SVG at the part where it asks for the background color.
@@ -200,17 +218,19 @@ contract OnChainHero is ERC721URIStorage {
     "<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMin meet' viewBox='0 0 350 350'><style>.base,.label,.number{fill:#777;font-family:Monaco,sans-serif;font-size:8px}.base,.label{font-size:10px}.base{fill:#222;font-size:12px;font-weight:600}</style><rect width='100%' height='100%' fill='";
   string constant svgPartTwo = "'/><rect width='90%' height='60%' fill='";
   string constant svgPartThree =
-    "' x='5%' y='20%' rx='20' style='-webkit-filter:drop-shadow(0 0 10px rgba(0,0,0,.5))' filter='drop-shadow(0 0 10px rgba(0,0,0,.5))'/><rect width='88%' height='58%' fill='#fff' x='6%' y='21%' rx='18'/><text x='10%' y='30%' class='base' dominant-baseline='middle'>Super Hero License</text><text x='10%' y='34%' class='number' dominant-baseline='middle'>License #";
+    "' x='5%' y='20%' rx='20' style='-webkit-filter:drop-shadow(0 0 10px rgba(0,0,0,.5))' filter='drop-shadow(0 0 10px rgba(0,0,0,.5))'/><rect width='88%' height='58%' fill='#fff' x='6%' y='21%' rx='18'/><g><circle style='fill:url(#toning);stroke:#010101;stroke-width:1.6871;stroke-miterlimit:10;' cx='85%' cy='30%' r='5%'></circle><text x='85%' y='30%' text-anchor='middle' dy='.3em'>";
   string constant svgPartFour =
-    "</text><text x='10%' y='40%' class='label' dominant-baseline='middle'>Hero Name</text><text x='10%' y='45%' class='base' dominant-baseline='middle'>";
+    "</text></g><text x='10%' y='30%' class='base' dominant-baseline='middle'>Super Hero License</text><text x='10%' y='34%' class='number' dominant-baseline='middle'>License #";
   string constant svgPartFive =
-    "</text><text x='10%' y='52%' class='label' dominant-baseline='middle'>Super Power</text><text x='10%' y='57%' class='base' dominant-baseline='middle'>";
+    "</text><text x='10%' y='40%' class='label' dominant-baseline='middle'>Hero Name</text><text x='10%' y='45%' class='base' dominant-baseline='middle'>";
   string constant svgPartSix =
-    "</text><text x='10%' y='64%' class='label' dominant-baseline='middle'>Location</text><text x='10%' y='69%' class='base' dominant-baseline='middle'>";
+    "</text><text x='10%' y='52%' class='label' dominant-baseline='middle'>Super Power</text><text x='10%' y='57%' class='base' dominant-baseline='middle'>";
   string constant svgPartSeven =
-    "</text><path fill='#eee' d='M240 100l-40 80 100-20-40 70z'/><path fill='";
+    "</text><text x='10%' y='64%' class='label' dominant-baseline='middle'>Location</text><text x='10%' y='69%' class='base' dominant-baseline='middle'>";
   string constant svgPartEight =
-    "' d='M250 100l-40 80 100-20-40 70z'/><text x='70%' y='67%' class='number' dominant-baseline='middle' text-anchor='middle'>Issued By</text><text x='70%' y='70%' class='number' dominant-baseline='middle' text-anchor='middle'>OnChainHero Corps</text></svg>";
+    "</text><path fill='#eee' d='M240 100l-40 80 100-20-40 70z'/><path fill='";
+  string constant svgPartNine =
+    "' d='M250 100l-40 80 100-20-40 70z'/><text x='70%' y='70%' class='number' dominant-baseline='middle' text-anchor='middle'>Issued By</text><text x='70%' y='73%' class='number' dominant-baseline='middle' text-anchor='middle'>OnChainHero Corps</text></svg>";
 
   // Get fancy with it! Declare a bunch of colors.
   string[] bgColors = [
@@ -535,6 +555,27 @@ contract OnChainHero is ERC721URIStorage {
     "Barcelona, Spain",
     "San Francisco, United States",
     "Los Angeles, United States"
+  ];
+
+  // distribution here is:
+  // - A+ - 1/10
+  // - A - 2/10
+  // - B - 5/10
+  // - C - 2/10
+  // Idea is to make A++ and A a bit more rare while keeping B to normal
+  // distribution since no one would want to get a C.
+  string[] grades = [
+    "A+",
+    "A",
+    "A",
+    "B",
+    "B",
+    "B",
+    "B",
+    "B",
+    "B",
+    "C",
+    "C"
   ];
 }
 
