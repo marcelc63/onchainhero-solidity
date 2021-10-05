@@ -71,7 +71,6 @@ contract OnChainHero is ERC721URIStorage {
     return nouns[rand];
   }
 
-  // Same old stuff, pick a random color.
   function pickRandomPrefix(uint256 tokenId)
     public
     view
@@ -84,7 +83,6 @@ contract OnChainHero is ERC721URIStorage {
     return prefixes[rand];
   }
 
-  // Same old stuff, pick a random color.
   function pickRandomPower(uint256 tokenId)
     public
     view
@@ -97,7 +95,6 @@ contract OnChainHero is ERC721URIStorage {
     return powers[rand];
   }
 
-  // Same old stuff, pick a random color.
   function pickRandomFirstName(uint256 tokenId)
     public
     view
@@ -110,7 +107,6 @@ contract OnChainHero is ERC721URIStorage {
     return firstNames[rand];
   }
 
-  // Same old stuff, pick a random color.
   function pickRandomLastName(uint256 tokenId)
     public
     view
@@ -127,6 +123,7 @@ contract OnChainHero is ERC721URIStorage {
     return uint256(keccak256(abi.encodePacked(input)));
   }
 
+  // Main function
   function makeAnEpicNFT() public {
     uint256 newItemId = _tokenIds.current();
 
